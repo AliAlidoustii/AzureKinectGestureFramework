@@ -16,7 +16,25 @@ public sealed class AkgfSequenceGestureRecorderEditor : Editor
 
         using (new EditorGUI.DisabledScope(Application.isPlaying == false || recorder.IsRecording))
         {
-            if (GUILayout.Button($"Record Sequence '{recorder.gestureName}'"))
+            if (GUILayout.Button($"Start Manual Sequence '{recorder.gestureName}'"))
+            {
+                recorder.StartManualRecording(recorder.gestureName);
+            }
+        }
+
+        using (new EditorGUI.DisabledScope(Application.isPlaying == false || !recorder.IsRecording))
+        {
+            if (GUILayout.Button("Stop & Save Sequence Recording"))
+            {
+                recorder.StopRecordingAndSave();
+            }
+        }
+
+        GUILayout.Space(4);
+
+        using (new EditorGUI.DisabledScope(Application.isPlaying == false || recorder.IsRecording))
+        {
+            if (GUILayout.Button($"Record Timed Sequence '{recorder.gestureName}'"))
             {
                 recorder.StartRecording(recorder.gestureName);
             }
@@ -28,6 +46,12 @@ public sealed class AkgfSequenceGestureRecorderEditor : Editor
             {
                 recorder.CancelRecording();
             }
+        }
+
+        if (recorder.IsRecording)
+        {
+            string mode = recorder.IsManualRecording ? "manual" : "timed";
+            EditorGUILayout.HelpBox($"Recording sequence ({mode})... Time: {recorder.RecordingElapsedSeconds:0.00}s, Frames: {recorder.CurrentFrameCount}", MessageType.Info);
         }
 
         if (!Application.isPlaying)

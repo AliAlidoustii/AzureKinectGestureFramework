@@ -14,14 +14,19 @@ namespace AzureKinectGestureFramework
 
         [Header("Recording")]
         public string gestureName = "Wave";
+        [Tooltip("Used only for automatic/timed sequence recording. Manual recording ignores this duration and stops only when StopRecordingAndSave is called.")]
         public float recordDurationSeconds = 1.25f;
         public float samplesPerSecond = 15f;
         public KeyCode recordKey = KeyCode.T;
         public bool recordWithKeyboard = true;
+        [Tooltip("When enabled, pressing the record key starts recording and pressing it again stops and saves. The UI buttons also use this manual mode.")]
+        public bool manualStopMode = true;
         public AkgfPoseNormalizerSettings normalizerSettings = new AkgfPoseNormalizerSettings();
 
         public bool IsRecording { get; private set; }
+        public bool IsManualRecording { get; private set; }
         public float RecordingProgress01 { get; private set; }
+        public float RecordingElapsedSeconds { get; private set; }
         public int CurrentFrameCount => frames != null ? frames.Count : 0;
         public string LastSavedPath { get; private set; } = string.Empty;
         public string LastError { get; private set; } = string.Empty;
@@ -43,7 +48,21 @@ namespace AzureKinectGestureFramework
         {
             if (recordWithKeyboard && Input.GetKeyDown(recordKey))
             {
-                StartRecording(gestureName);
+                if (manualStopMode)
+                {
+                    if (IsRecording)
+                    {
+                        StopRecordingAndSave();
+                    }
+                    else
+                    {
+                        StartManualRecording(gestureName);
+                    }
+                }
+                else
+                {
+                    StartRecording(gestureName);
+                }
             }
 
             if (IsRecording)
@@ -67,9 +86,32 @@ namespace AzureKinectGestureFramework
             }
         }
 
+        /// <summary>
+        /// Starts the old fixed-duration sequence recording. The recording automatically saves after recordDurationSeconds.
+        /// </summary>
         public void StartRecording(string newGestureName)
         {
+            StartRecordingInternal(newGestureName, false);
+        }
+
+        /// <summary>
+        /// Starts manual sequence recording. Call StopRecordingAndSave() to finish and save it.
+        /// </summary>
+        public void StartManualRecording(string newGestureName)
+        {
+            StartRecordingInternal(newGestureName, true);
+        }
+
+        private void StartRecordingInternal(string newGestureName, bool manual)
+        {
             LastError = string.Empty;
+
+            if (IsRecording)
+            {
+                LastError = "Sequence recorder is already recording. Stop or cancel the current recording first.";
+                Debug.LogWarning(LastError, this);
+                return;
+            }
 
             if (string.IsNullOrWhiteSpace(newGestureName))
             {
@@ -93,22 +135,50 @@ namespace AzureKinectGestureFramework
             gestureName = newGestureName.Trim();
             frames.Clear();
             RecordingProgress01 = 0f;
+            RecordingElapsedSeconds = 0f;
             recordingStartedAt = Time.time;
             nextSampleTime = Time.time;
+            IsManualRecording = manual;
             IsRecording = true;
+        }
+
+        public void StopRecordingAndSave()
+        {
+            if (!IsRecording)
+            {
+                LastError = "Sequence recorder is not recording.";
+                Debug.LogWarning(LastError, this);
+                return;
+            }
+
+            // Try to capture the current frame at the exact stop moment, then save.
+            TryCaptureFrame();
+            FinishRecordingAndSave();
         }
 
         public void CancelRecording()
         {
             IsRecording = false;
+            IsManualRecording = false;
             RecordingProgress01 = 0f;
+            RecordingElapsedSeconds = 0f;
             frames.Clear();
         }
 
         private void TickRecording()
         {
             float elapsed = Time.time - recordingStartedAt;
-            RecordingProgress01 = Mathf.Clamp01(elapsed / Mathf.Max(0.001f, recordDurationSeconds));
+            RecordingElapsedSeconds = elapsed;
+
+            if (IsManualRecording)
+            {
+                // Manual recordings have no fixed end, but this value still gives a useful UI progress reference.
+                RecordingProgress01 = Mathf.Clamp01(elapsed / Mathf.Max(0.001f, recordDurationSeconds));
+            }
+            else
+            {
+                RecordingProgress01 = Mathf.Clamp01(elapsed / Mathf.Max(0.001f, recordDurationSeconds));
+            }
 
             if (Time.time >= nextSampleTime)
             {
@@ -117,7 +187,7 @@ namespace AzureKinectGestureFramework
                 nextSampleTime = Time.time + interval;
             }
 
-            if (elapsed >= recordDurationSeconds)
+            if (!IsManualRecording && elapsed >= recordDurationSeconds)
             {
                 FinishRecordingAndSave();
             }
@@ -142,7 +212,14 @@ namespace AzureKinectGestureFramework
 
         private void FinishRecordingAndSave()
         {
+            float durationSeconds = Mathf.Max(0.001f, Time.time - recordingStartedAt);
+            if (!IsManualRecording)
+            {
+                durationSeconds = Mathf.Max(0.001f, recordDurationSeconds);
+            }
+
             IsRecording = false;
+            IsManualRecording = false;
 
             if (frames.Count < 2)
             {
@@ -150,6 +227,7 @@ namespace AzureKinectGestureFramework
                 Debug.LogWarning(LastError, this);
                 frames.Clear();
                 RecordingProgress01 = 0f;
+                RecordingElapsedSeconds = 0f;
                 return;
             }
 
@@ -164,12 +242,13 @@ namespace AzureKinectGestureFramework
                 Debug.LogWarning(LastError, this);
                 frames.Clear();
                 RecordingProgress01 = 0f;
+                RecordingElapsedSeconds = 0f;
                 return;
             }
 
             AkgfPoseSequence sequence = new AkgfPoseSequence
             {
-                durationSeconds = recordDurationSeconds,
+                durationSeconds = durationSeconds,
                 sampleRate = samplesPerSecond,
                 frames = new List<AkgfNormalizedPose>(frames)
             };
@@ -178,7 +257,7 @@ namespace AzureKinectGestureFramework
             AkgfSequenceGestureData gesture = new AkgfSequenceGestureData
             {
                 gestureName = gestureName.Trim(),
-                notes = $"Recorded in Unity as sequence. Frames: {sequence.frameCount}, Duration: {recordDurationSeconds:0.000}s",
+                notes = $"Recorded in Unity as sequence. Frames: {sequence.frameCount}, Duration: {durationSeconds:0.000}s, ManualStop: {durationSeconds != recordDurationSeconds}",
                 samples = new List<AkgfPoseSequence> { sequence }
             };
 
@@ -197,6 +276,7 @@ namespace AzureKinectGestureFramework
             {
                 frames.Clear();
                 RecordingProgress01 = 0f;
+                RecordingElapsedSeconds = 0f;
             }
         }
     }

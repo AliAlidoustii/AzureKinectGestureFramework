@@ -527,10 +527,51 @@ public sealed class AkgfControlPanelWindow : EditorWindow
             Undo.RecordObject(sequenceRecorder, "Edit AKGF Sequence Recorder");
             EditorGUILayout.LabelField("Sequence Recorder", EditorStyles.boldLabel);
             sequenceRecorder.gestureName = EditorGUILayout.TextField("Gesture Name", sequenceRecorder.gestureName);
-            sequenceRecorder.recordDurationSeconds = Mathf.Max(0.05f, EditorGUILayout.FloatField("Record Duration", sequenceRecorder.recordDurationSeconds));
+            sequenceRecorder.recordDurationSeconds = Mathf.Max(0.05f, EditorGUILayout.FloatField("Timed Record Duration", sequenceRecorder.recordDurationSeconds));
             sequenceRecorder.samplesPerSecond = Mathf.Max(1f, EditorGUILayout.FloatField("Samples Per Second", sequenceRecorder.samplesPerSecond));
             sequenceRecorder.recordKey = (KeyCode)EditorGUILayout.EnumPopup("Record Hotkey", sequenceRecorder.recordKey);
             sequenceRecorder.recordWithKeyboard = EditorGUILayout.Toggle("Use Hotkey", sequenceRecorder.recordWithKeyboard);
+            sequenceRecorder.manualStopMode = EditorGUILayout.Toggle("Hotkey Toggles Start/Stop", sequenceRecorder.manualStopMode);
+
+            using (new EditorGUI.DisabledScope(!Application.isPlaying || sequenceRecorder.IsRecording))
+            {
+                if (GUILayout.Button("Start Sequence Recording"))
+                {
+                    sequenceRecorder.StartManualRecording(sequenceRecorder.gestureName);
+                }
+            }
+
+            using (new EditorGUI.DisabledScope(!Application.isPlaying || !sequenceRecorder.IsRecording))
+            {
+                if (GUILayout.Button("Stop & Save Sequence Recording"))
+                {
+                    sequenceRecorder.StopRecordingAndSave();
+                }
+            }
+
+            using (new EditorGUI.DisabledScope(!Application.isPlaying || sequenceRecorder.IsRecording))
+            {
+                if (GUILayout.Button("Record Timed Sequence"))
+                {
+                    sequenceRecorder.StartRecording(sequenceRecorder.gestureName);
+                }
+            }
+
+            if (sequenceRecorder.IsRecording)
+            {
+                EditorGUILayout.HelpBox($"Recording sequence ({(sequenceRecorder.IsManualRecording ? "manual" : "timed")})... Time: {sequenceRecorder.RecordingElapsedSeconds:0.00}s, Frames: {sequenceRecorder.CurrentFrameCount}", MessageType.Info);
+            }
+
+            if (!string.IsNullOrWhiteSpace(sequenceRecorder.LastSavedPath))
+            {
+                EditorGUILayout.HelpBox("Last saved: " + sequenceRecorder.LastSavedPath, MessageType.None);
+            }
+
+            if (!string.IsNullOrWhiteSpace(sequenceRecorder.LastError))
+            {
+                EditorGUILayout.HelpBox(sequenceRecorder.LastError, MessageType.Warning);
+            }
+
             EditorUtility.SetDirty(sequenceRecorder);
         }
 

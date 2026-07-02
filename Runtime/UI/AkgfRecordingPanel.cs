@@ -17,7 +17,7 @@ namespace AzureKinectGestureFramework
         [Header("UI")]
         public bool showPanel = true;
         public KeyCode toggleKey = KeyCode.F7;
-        public Rect windowRect = new Rect(16, 240, 380, 260);
+        public Rect windowRect = new Rect(16, 240, 420, 310);
         public string staticGestureName = "CrossArms";
         public string sequenceGestureName = "Wave";
         public string calibrationProfileName = "DefaultUser";
@@ -89,16 +89,30 @@ namespace AzureKinectGestureFramework
             GUILayout.Space(6);
             GUILayout.Label("Movement sequence gesture");
             sequenceGestureName = GUILayout.TextField(sequenceGestureName ?? string.Empty);
+
+            GUILayout.BeginHorizontal();
             GUI.enabled = sequenceRecorder != null && !sequenceRecorder.IsRecording;
-            if (GUILayout.Button("Record Sequence"))
+            if (GUILayout.Button("Start Sequence Recording"))
+            {
+                sequenceRecorder.StartManualRecording(sequenceGestureName);
+            }
+
+            GUI.enabled = sequenceRecorder != null && sequenceRecorder.IsRecording;
+            if (GUILayout.Button("Stop & Save Sequence"))
+            {
+                sequenceRecorder.StopRecordingAndSave();
+            }
+            GUI.enabled = true;
+            GUILayout.EndHorizontal();
+
+            GUI.enabled = sequenceRecorder != null && !sequenceRecorder.IsRecording;
+            if (GUILayout.Button("Record Timed Sequence"))
             {
                 sequenceRecorder.StartRecording(sequenceGestureName);
             }
             GUI.enabled = true;
-            DrawRecorderStatus(sequenceRecorder != null ? sequenceRecorder.IsRecording : false,
-                sequenceRecorder != null ? sequenceRecorder.RecordingProgress01 : 0f,
-                sequenceRecorder != null ? sequenceRecorder.CurrentFrameCount : 0,
-                sequenceRecorder != null ? sequenceRecorder.LastError : "No sequence recorder found.");
+
+            DrawSequenceRecorderStatus(sequenceRecorder);
 
             GUILayout.Space(6);
             GUILayout.Label("Neutral calibration profile");
@@ -124,6 +138,30 @@ namespace AzureKinectGestureFramework
 
             GUILayout.Label("Toggle panel: F7");
             GUI.DragWindow();
+        }
+
+
+        private static void DrawSequenceRecorderStatus(AkgfSequenceGestureRecorder sequenceRecorder)
+        {
+            if (sequenceRecorder == null)
+            {
+                GUILayout.Label("Status: No sequence recorder found.");
+                return;
+            }
+
+            if (sequenceRecorder.IsRecording)
+            {
+                string mode = sequenceRecorder.IsManualRecording ? "manual" : "timed";
+                GUILayout.Label($"Recording sequence ({mode})... Time: {sequenceRecorder.RecordingElapsedSeconds:0.00}s  Frames: {sequenceRecorder.CurrentFrameCount}");
+            }
+            else if (!string.IsNullOrWhiteSpace(sequenceRecorder.LastError))
+            {
+                GUILayout.Label("Status: " + sequenceRecorder.LastError);
+            }
+            else if (!string.IsNullOrWhiteSpace(sequenceRecorder.LastSavedPath))
+            {
+                GUILayout.Label("Last saved: " + sequenceRecorder.LastSavedPath);
+            }
         }
 
         private static void DrawRecorderStatus(bool recording, float progress, int count, string error)

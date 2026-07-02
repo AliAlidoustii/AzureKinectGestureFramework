@@ -164,8 +164,8 @@ namespace AzureKinectGestureFramework
             if (sequenceRecorder != null)
             {
                 GUILayout.Label(sequenceRecorder.IsRecording
-                    ? $"Sequence recording '{sequenceRecorder.gestureName}'... {sequenceRecorder.RecordingProgress01 * 100f:0}% | Frames: {sequenceRecorder.CurrentFrameCount}"
-                    : $"Sequence recorder: press {sequenceRecorder.recordKey} for '{sequenceRecorder.gestureName}'.", labelStyle);
+                    ? $"Sequence recording '{sequenceRecorder.gestureName}' ({(sequenceRecorder.IsManualRecording ? "manual" : "timed")})... {sequenceRecorder.RecordingElapsedSeconds:0.00}s | Frames: {sequenceRecorder.CurrentFrameCount}"
+                    : $"Sequence recorder: press {sequenceRecorder.recordKey} for '{sequenceRecorder.gestureName}'{(sequenceRecorder.manualStopMode ? " start/stop" : " timed") }.", labelStyle);
 
                 if (!string.IsNullOrWhiteSpace(sequenceRecorder.LastError))
                 {

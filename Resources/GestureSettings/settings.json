@@ -1,3 +1,58 @@
 {
-    "settings": []
+  "settings": [
+    {
+      "gestureName": "CrossArms",
+      "gestureKind": 0,
+      "enabled": true,
+      "groupName": "Default",
+      "minimumSimilarity": 0.84,
+      "requiredStableSeconds": 0.25,
+      "cooldownSeconds": 0.9,
+      "priority": 5,
+      "mirrorMode": 1,
+      "minimumTrackingQuality": 0.35,
+      "qualityPenaltyStrength": 0.5,
+      "requiredJoints": [5, 6, 7, 8, 12, 13, 14, 15],
+      "fireOnEnter": true,
+      "fireOnStay": false,
+      "fireOnExit": true,
+      "fireOnConfirmed": true
+    },
+    {
+      "gestureName": "HeadUp",
+      "gestureKind": 0,
+      "enabled": true,
+      "groupName": "Default",
+      "minimumSimilarity": 0.80,
+      "requiredStableSeconds": 0.20,
+      "cooldownSeconds": 0.7,
+      "priority": 3,
+      "mirrorMode": 0,
+      "minimumTrackingQuality": 0.30,
+      "qualityPenaltyStrength": 0.5,
+      "requiredJoints": [3, 26, 27, 28, 30],
+      "fireOnEnter": true,
+      "fireOnStay": false,
+      "fireOnExit": true,
+      "fireOnConfirmed": true
+    },
+    {
+      "gestureName": "Wave",
+      "gestureKind": 1,
+      "enabled": true,
+      "groupName": "Default",
+      "minimumSimilarity": 0.72,
+      "requiredStableSeconds": 0.0,
+      "cooldownSeconds": 1.25,
+      "priority": 20,
+      "mirrorMode": 1,
+      "minimumTrackingQuality": 0.30,
+      "qualityPenaltyStrength": 0.5,
+      "requiredJoints": [5, 6, 7, 8, 12, 13, 14, 15],
+      "fireOnEnter": true,
+      "fireOnStay": false,
+      "fireOnExit": false,
+      "fireOnConfirmed": true
+    }
+  ]
 }
