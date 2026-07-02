@@ -69,6 +69,33 @@ namespace AzureKinectGestureFramework
             RemoveDuplicatesKeepingLast();
         }
 
+        public bool TryGetExplicitSettings(string gestureName, AkgfGestureKind kind, out AkgfGestureSettings result)
+        {
+            result = null;
+            if (settings == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < settings.Count; i++)
+            {
+                AkgfGestureSettings item = settings[i];
+                if (item == null)
+                {
+                    continue;
+                }
+
+                item.EnsureValid();
+                if (item.Matches(gestureName, kind, caseSensitiveGestureNames))
+                {
+                    result = item;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public AkgfGestureSettings GetSettings(string gestureName, AkgfGestureKind kind)
         {
             if (settings != null)

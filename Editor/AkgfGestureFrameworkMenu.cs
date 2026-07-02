@@ -167,6 +167,24 @@ public static class AkgfGestureFrameworkMenu
         manager.autoCalibrateNewUsers = true;
         manager.requireCalibrationBeforeRecognition = false;
         manager.sequenceHasPriority = true;
+        manager.defaultStaticMinimumSimilarity = 0.55f;
+        manager.defaultSequenceMinimumSimilarity = 0.50f;
+        manager.defaultStaticStableSeconds = 0f;
+        manager.defaultStaticCooldownSeconds = 1.0f;
+        manager.defaultSequenceCooldownSeconds = 1.0f;
+        manager.requiredConsecutiveSequenceMatches = 1;
+        manager.globalCooldownSeconds = 0.3f;
+        manager.sameGestureCooldownSeconds = 1.0f;
+        manager.usePerGestureThresholds = false;
+        manager.usePerGestureCooldowns = false;
+        manager.usePerGestureStableSeconds = false;
+        manager.useExplicitGestureSettings = true;
+        manager.useTrackingQualityFilter = true;
+        manager.emitDetectedPhase = false;
+        manager.emitEnterPhase = true;
+        manager.emitStayPhase = false;
+        manager.emitExitPhase = false;
+        manager.emitConfirmedPhase = false;
 
         router.multiUserManager = manager;
     }

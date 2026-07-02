@@ -679,6 +679,14 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         multiUserManager.defaultStaticStableSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Default Static Stable Seconds", multiUserManager.defaultStaticStableSeconds));
         multiUserManager.defaultStaticCooldownSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Default Static Cooldown", multiUserManager.defaultStaticCooldownSeconds));
         multiUserManager.defaultSequenceCooldownSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Default Sequence Cooldown", multiUserManager.defaultSequenceCooldownSeconds));
+        EditorGUILayout.Space(4);
+        EditorGUILayout.LabelField("SingleUser-Compatible Acceptance", EditorStyles.boldLabel);
+        multiUserManager.usePerGestureThresholds = EditorGUILayout.Toggle("Use Per-Gesture Thresholds", multiUserManager.usePerGestureThresholds);
+        multiUserManager.usePerGestureCooldowns = EditorGUILayout.Toggle("Use Per-Gesture Cooldowns", multiUserManager.usePerGestureCooldowns);
+        multiUserManager.usePerGestureStableSeconds = EditorGUILayout.Toggle("Use Per-Gesture Stable Seconds", multiUserManager.usePerGestureStableSeconds);
+        multiUserManager.useExplicitGestureSettings = EditorGUILayout.Toggle("Use Explicit Gesture Settings", multiUserManager.useExplicitGestureSettings);
+        multiUserManager.useTrackingQualityFilter = EditorGUILayout.Toggle("Use Tracking Quality Filter", multiUserManager.useTrackingQualityFilter);
+        EditorGUILayout.Space(4);
         multiUserManager.sequenceHasPriority = EditorGUILayout.Toggle("Sequence Has Priority", multiUserManager.sequenceHasPriority);
         multiUserManager.globalCooldownSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Global Cooldown", multiUserManager.globalCooldownSeconds));
         multiUserManager.sameGestureCooldownSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Same Gesture Cooldown", multiUserManager.sameGestureCooldownSeconds));
@@ -1033,6 +1041,11 @@ public sealed class AkgfControlPanelWindow : EditorWindow
             multiUserManager.defaultStaticStableSeconds = 0f;
             multiUserManager.defaultStaticCooldownSeconds = 1.0f;
             multiUserManager.defaultSequenceCooldownSeconds = 1.0f;
+            multiUserManager.usePerGestureThresholds = false;
+            multiUserManager.usePerGestureCooldowns = false;
+            multiUserManager.usePerGestureStableSeconds = false;
+            multiUserManager.useExplicitGestureSettings = true;
+            multiUserManager.useTrackingQualityFilter = true;
             multiUserManager.requiredConsecutiveSequenceMatches = 1;
             multiUserManager.globalCooldownSeconds = 0.3f;
             multiUserManager.sameGestureCooldownSeconds = 1.0f;

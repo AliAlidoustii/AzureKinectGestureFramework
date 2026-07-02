@@ -154,6 +154,13 @@ namespace AzureKinectGestureFramework
             }
             GUILayout.Space(4);
             GUILayout.Label($"MultiUser visible/active: {(multiUserManager != null ? multiUserManager.VisibleBodyCount : 0)} / {(multiUserManager != null ? multiUserManager.ActiveUserCount : 0)}");
+            if (multiUserManager != null)
+            {
+                GUILayout.Label($"Multi static: {Format(multiUserManager.LastStaticCandidate)}");
+                GUILayout.Label($"Multi sequence: {Format(multiUserManager.LastSequenceCandidate)}");
+                GUILayout.Label($"Multi output: {Format(multiUserManager.LastOutput)}");
+                GUILayout.Label("Multi decision: " + (string.IsNullOrWhiteSpace(multiUserManager.LastDecision) ? "not evaluated yet" : multiUserManager.LastDecision));
+            }
             GUILayout.Space(6);
             GUILayout.Label("Recent events:");
             foreach (string item in recentEvents)
