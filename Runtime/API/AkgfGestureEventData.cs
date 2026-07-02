@@ -12,7 +12,11 @@ namespace AzureKinectGestureFramework
     {
         public int bodyId = -1;
         public string gestureName = string.Empty;
+        [Tooltip("Human-readable confidence percentage from 0 to 100. Threshold fields still use 0.0 to 1.0.")]
         public float confidence;
+        public float confidencePercent;
+        [Tooltip("Raw normalized confidence from 0.0 to 1.0 for calculations/backward-compatible math.")]
+        public float confidence01;
         public AkgfGestureKind gestureKind = AkgfGestureKind.StaticPose;
         public AkgfGesturePhase phase = AkgfGesturePhase.Detected;
         public string groupName = string.Empty;
@@ -29,7 +33,9 @@ namespace AzureKinectGestureFramework
             {
                 bodyId = match.bodyId,
                 gestureName = match.gestureName,
-                confidence = match.similarity,
+                confidence = AkgfGestureMatcher.SimilarityToPercent(match.similarity),
+                confidencePercent = AkgfGestureMatcher.SimilarityToPercent(match.similarity),
+                confidence01 = match.similarity,
                 gestureKind = match.gestureKind,
                 phase = match.phase,
                 groupName = match.groupName,

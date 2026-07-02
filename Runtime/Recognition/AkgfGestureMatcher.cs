@@ -7,8 +7,8 @@ namespace AzureKinectGestureFramework
     [Serializable]
     public sealed class AkgfGestureMatcherSettings
     {
-        [Tooltip("Lower values make the similarity score stricter. Good range: 0.08 - 0.30.")]
-        public float similaritySensitivity = 0.16f;
+        [Tooltip("Confidence formula: sensitivity / (sensitivity + distance). Higher values make confidence more forgiving. Good range: 0.45 - 0.90.")]
+        public float similaritySensitivity = 0.65f;
 
         [Tooltip("Use the nearest N samples from each gesture instead of only the single nearest sample.")]
         [Range(1, 10)] public int nearestSampleCount = 3;
@@ -105,8 +105,23 @@ namespace AzureKinectGestureFramework
                 return 0f;
             }
 
+            // New percentage-friendly confidence formula.
+            // Old formula was exp(-distance / sensitivity), which collapses useful Kinect matches
+            // into very small numbers such as 0.01 - 0.05. This inverse-distance curve keeps the
+            // same ordering (smaller distance still wins), but produces intuitive confidence values:
+            // 0.55 = 55%, 0.80 = 80%, etc.
             sensitivity = Mathf.Max(0.0001f, sensitivity);
-            return Mathf.Clamp01(Mathf.Exp(-distance / sensitivity));
+            return Mathf.Clamp01(sensitivity / (sensitivity + distance));
+        }
+
+        public static float SimilarityToPercent(float similarity)
+        {
+            return Mathf.Clamp01(similarity) * 100f;
+        }
+
+        public static string FormatSimilarityPercent(float similarity)
+        {
+            return $"{SimilarityToPercent(similarity):0}%";
         }
 
         private static float DistanceToGesture(

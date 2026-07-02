@@ -38,9 +38,9 @@ namespace AzureKinectGestureFramework
         [Tooltip("When enabled, the coordinator can accept the recognizers' current LastMatch candidates directly, instead of relying only on recognizer events. This fixes cases where candidates are visible in debug UI but never become final output.")]
         public bool acceptCurrentCandidateDirectly = true;
         [Tooltip("Minimum similarity for directly accepting static pose candidates at coordinator level.")]
-        [Range(0f, 1f)] public float directStaticMinimumSimilarity = 0.30f;
+        [Range(0f, 1f)] public float directStaticMinimumSimilarity = 0.60f;
         [Tooltip("Minimum similarity for directly accepting sequence candidates at coordinator level.")]
-        [Range(0f, 1f)] public float directSequenceMinimumSimilarity = 0.35f;
+        [Range(0f, 1f)] public float directSequenceMinimumSimilarity = 0.55f;
         [Tooltip("If enabled, per-gesture minimumSimilarity can raise the direct candidate threshold. Disable while debugging if settings database is too strict.")]
         public bool usePerGestureThresholdForDirectCandidates = false;
         [Tooltip("If enabled, recognizer minimumSimilarity can raise the direct candidate threshold. Disable while debugging if recognizer threshold is too strict.")]
@@ -293,7 +293,7 @@ namespace AzureKinectGestureFramework
 
             if (match.similarity < Mathf.Clamp01(threshold))
             {
-                LastDecision = $"candidate below coordinator threshold: {match.gestureName} {match.similarity:0.00} < {threshold:0.00}";
+                LastDecision = $"candidate below coordinator threshold: {match.gestureName} {AkgfGestureMatcher.FormatSimilarityPercent(match.similarity)} < {AkgfGestureMatcher.FormatSimilarityPercent(threshold)}";
                 return false;
             }
 
@@ -411,7 +411,7 @@ namespace AzureKinectGestureFramework
                 Emit(match, AkgfGesturePhase.Confirmed);
             }
 
-            LastDecision = $"accepted: {match.gestureName} {match.gestureKind} {match.similarity:0.00}";
+            LastDecision = $"accepted: {match.gestureName} {match.gestureKind} {AkgfGestureMatcher.FormatSimilarityPercent(match.similarity)}";
             return true;
         }
 
@@ -439,7 +439,7 @@ namespace AzureKinectGestureFramework
             lastFireByGesture[NormalizeKey(candidate.gestureName)] = Time.time;
             lastDebugForceEmitTime = Time.time;
             LastOutput = candidate;
-            LastDecision = $"FORCED RESULT: {candidate.gestureName} {candidate.gestureKind} {candidate.similarity:0.00}";
+            LastDecision = $"FORCED RESULT: {candidate.gestureName} {candidate.gestureKind} {AkgfGestureMatcher.FormatSimilarityPercent(candidate.similarity)}";
             Emit(candidate, AkgfGesturePhase.Detected);
             return true;
         }

@@ -160,6 +160,19 @@ public sealed class AkgfControlPanelWindow : EditorWindow
 
         using (new EditorGUILayout.HorizontalScope())
         {
+            if (GUILayout.Button("MultiUser Debug Mode"))
+            {
+                ApplyMultiUserDebugMode();
+            }
+
+            if (GUILayout.Button("Percentage Confidence Defaults"))
+            {
+                ApplySingleUserLowScoreDefaults();
+            }
+        }
+
+        using (new EditorGUILayout.HorizontalScope())
+        {
             if (GUILayout.Button("Import Recorded Gestures Into Settings"))
             {
                 ImportRecordedGesturesIntoSettings();
@@ -233,7 +246,7 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         {
             EditorGUILayout.LabelField("Static Pose Recognizer", EditorStyles.boldLabel);
             Undo.RecordObject(staticRecognizer, "Edit AKGF Static Recognizer");
-            staticRecognizer.minimumSimilarity = EditorGUILayout.Slider("Minimum Similarity", staticRecognizer.minimumSimilarity, 0f, 1f);
+            staticRecognizer.minimumSimilarity = EditorGUILayout.Slider("Minimum Similarity (0.70 = 70%)", staticRecognizer.minimumSimilarity, 0f, 1f);
             staticRecognizer.requiredStableSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Stable / Hold Seconds", staticRecognizer.requiredStableSeconds));
             staticRecognizer.sameGestureCooldownSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Same Gesture Cooldown", staticRecognizer.sameGestureCooldownSeconds));
             staticRecognizer.recognizeEveryFrame = EditorGUILayout.Toggle("Recognize Every Frame", staticRecognizer.recognizeEveryFrame);
@@ -251,7 +264,7 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         {
             EditorGUILayout.LabelField("Sequence Gesture Recognizer", EditorStyles.boldLabel);
             Undo.RecordObject(sequenceRecognizer, "Edit AKGF Sequence Recognizer");
-            sequenceRecognizer.minimumSimilarity = EditorGUILayout.Slider("Minimum Similarity", sequenceRecognizer.minimumSimilarity, 0f, 1f);
+            sequenceRecognizer.minimumSimilarity = EditorGUILayout.Slider("Minimum Similarity (0.70 = 70%)", sequenceRecognizer.minimumSimilarity, 0f, 1f);
             sequenceRecognizer.recognitionWindowSeconds = Mathf.Max(0.05f, EditorGUILayout.FloatField("Recognition Window Seconds", sequenceRecognizer.recognitionWindowSeconds));
             sequenceRecognizer.samplesPerSecond = Mathf.Max(1f, EditorGUILayout.FloatField("Samples Per Second", sequenceRecognizer.samplesPerSecond));
             sequenceRecognizer.recognitionsPerSecond = Mathf.Max(1f, EditorGUILayout.FloatField("Recognitions Per Second", sequenceRecognizer.recognitionsPerSecond));
@@ -293,8 +306,8 @@ public sealed class AkgfControlPanelWindow : EditorWindow
             EditorGUILayout.Space(4);
             EditorGUILayout.LabelField("Normal Candidate Acceptance", EditorStyles.boldLabel);
             coordinator.acceptCurrentCandidateDirectly = EditorGUILayout.Toggle("Accept Current Candidate Directly", coordinator.acceptCurrentCandidateDirectly);
-            coordinator.directStaticMinimumSimilarity = EditorGUILayout.Slider("Direct Static Min Similarity", coordinator.directStaticMinimumSimilarity, 0f, 1f);
-            coordinator.directSequenceMinimumSimilarity = EditorGUILayout.Slider("Direct Sequence Min Similarity", coordinator.directSequenceMinimumSimilarity, 0f, 1f);
+            coordinator.directStaticMinimumSimilarity = EditorGUILayout.Slider("Direct Static Min Similarity (0.70 = 70%)", coordinator.directStaticMinimumSimilarity, 0f, 1f);
+            coordinator.directSequenceMinimumSimilarity = EditorGUILayout.Slider("Direct Sequence Min Similarity (0.65 = 65%)", coordinator.directSequenceMinimumSimilarity, 0f, 1f);
             coordinator.usePerGestureThresholdForDirectCandidates = EditorGUILayout.Toggle("Use Per-Gesture Threshold", coordinator.usePerGestureThresholdForDirectCandidates);
             coordinator.useRecognizerThresholdForDirectCandidates = EditorGUILayout.Toggle("Use Recognizer Threshold", coordinator.useRecognizerThresholdForDirectCandidates);
             EditorGUILayout.Space(4);
@@ -366,8 +379,8 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         }
 
         Undo.RecordObject(settingsDatabase, "Edit AKGF Settings Database");
-        settingsDatabase.defaultStaticMinimumSimilarity = EditorGUILayout.Slider("Default Static Similarity", settingsDatabase.defaultStaticMinimumSimilarity, 0f, 1f);
-        settingsDatabase.defaultSequenceMinimumSimilarity = EditorGUILayout.Slider("Default Sequence Similarity", settingsDatabase.defaultSequenceMinimumSimilarity, 0f, 1f);
+        settingsDatabase.defaultStaticMinimumSimilarity = EditorGUILayout.Slider("Default Static Similarity (0.60 = 60%)", settingsDatabase.defaultStaticMinimumSimilarity, 0f, 1f);
+        settingsDatabase.defaultSequenceMinimumSimilarity = EditorGUILayout.Slider("Default Sequence Similarity (0.55 = 55%)", settingsDatabase.defaultSequenceMinimumSimilarity, 0f, 1f);
         settingsDatabase.defaultStaticStableSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Default Static Stable Seconds", settingsDatabase.defaultStaticStableSeconds));
         settingsDatabase.defaultStaticCooldownSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Default Static Cooldown Seconds", settingsDatabase.defaultStaticCooldownSeconds));
         settingsDatabase.defaultSequenceCooldownSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Default Sequence Cooldown Seconds", settingsDatabase.defaultSequenceCooldownSeconds));
@@ -408,7 +421,7 @@ public sealed class AkgfControlPanelWindow : EditorWindow
             }
 
             item.groupName = EditorGUILayout.TextField("Group", item.groupName);
-            item.minimumSimilarity = EditorGUILayout.Slider("Min Similarity", item.minimumSimilarity, 0f, 1f);
+            item.minimumSimilarity = EditorGUILayout.Slider("Min Similarity (0.70 = 70%)", item.minimumSimilarity, 0f, 1f);
             item.requiredStableSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Stable / Hold Seconds", item.requiredStableSeconds));
             item.cooldownSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Cooldown Seconds", item.cooldownSeconds));
             item.priority = EditorGUILayout.IntField("Priority", item.priority);
@@ -661,8 +674,8 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         multiUserManager.multiSkeletonSourceBehaviour = (MonoBehaviour)EditorGUILayout.ObjectField("Multi Skeleton Source", multiUserManager.multiSkeletonSourceBehaviour, typeof(MonoBehaviour), true);
         multiUserManager.enableStaticPoseRecognition = EditorGUILayout.Toggle("Enable Static Recognition", multiUserManager.enableStaticPoseRecognition);
         multiUserManager.enableSequenceRecognition = EditorGUILayout.Toggle("Enable Sequence Recognition", multiUserManager.enableSequenceRecognition);
-        multiUserManager.defaultStaticMinimumSimilarity = EditorGUILayout.Slider("Default Static Similarity", multiUserManager.defaultStaticMinimumSimilarity, 0f, 1f);
-        multiUserManager.defaultSequenceMinimumSimilarity = EditorGUILayout.Slider("Default Sequence Similarity", multiUserManager.defaultSequenceMinimumSimilarity, 0f, 1f);
+        multiUserManager.defaultStaticMinimumSimilarity = EditorGUILayout.Slider("Default Static Similarity (0.60 = 60%)", multiUserManager.defaultStaticMinimumSimilarity, 0f, 1f);
+        multiUserManager.defaultSequenceMinimumSimilarity = EditorGUILayout.Slider("Default Sequence Similarity (0.55 = 55%)", multiUserManager.defaultSequenceMinimumSimilarity, 0f, 1f);
         multiUserManager.defaultStaticStableSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Default Static Stable Seconds", multiUserManager.defaultStaticStableSeconds));
         multiUserManager.defaultStaticCooldownSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Default Static Cooldown", multiUserManager.defaultStaticCooldownSeconds));
         multiUserManager.defaultSequenceCooldownSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Default Sequence Cooldown", multiUserManager.defaultSequenceCooldownSeconds));
@@ -704,7 +717,7 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         EditorGUILayout.LabelField("Final Output", Format(coordinator != null ? coordinator.LastOutput : AkgfGestureMatchResult.None));
         if (api != null && api.LastGesture != null)
         {
-            EditorGUILayout.LabelField("API Last Gesture", $"{api.LastGesture.gestureName} {api.LastGesture.phase} {api.LastGesture.confidence:0.00}");
+            EditorGUILayout.LabelField("API Last Gesture", $"{api.LastGesture.gestureName} {api.LastGesture.phase} {api.LastGesture.confidencePercent:0}%");
         }
         else
         {
@@ -714,6 +727,10 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         if (multiUserManager != null)
         {
             EditorGUILayout.LabelField("MultiUser", $"Visible: {multiUserManager.VisibleBodyCount}  Active: {multiUserManager.ActiveUserCount}");
+            EditorGUILayout.LabelField("Multi Static Candidate", Format(multiUserManager.LastStaticCandidate));
+            EditorGUILayout.LabelField("Multi Sequence Candidate", Format(multiUserManager.LastSequenceCandidate));
+            EditorGUILayout.LabelField("Multi Final Output", Format(multiUserManager.LastOutput));
+            EditorGUILayout.LabelField("Multi Decision", multiUserManager.LastDecision ?? "not evaluated yet");
         }
         EditorGUILayout.EndVertical();
     }
@@ -881,12 +898,15 @@ public sealed class AkgfControlPanelWindow : EditorWindow
             return;
         }
 
-        Undo.RecordObject(multiUserManager, "Assign AKGF MultiUser Source");
-        if (multiUserManager != null)
+        if (multiUserManager == null)
         {
-            multiUserManager.multiSkeletonSourceBehaviour = source;
-            EditorUtility.SetDirty(multiUserManager);
+            EditorUtility.DisplayDialog("AKGF", "No AkgfMultiUserGestureManager found in the scene.", "OK");
+            return;
         }
+
+        Undo.RecordObject(multiUserManager, "Assign AKGF MultiUser Source");
+        multiUserManager.multiSkeletonSourceBehaviour = source;
+        EditorUtility.SetDirty(multiUserManager);
     }
 
     private void ApplySingleUserDebugMode()
@@ -902,10 +922,10 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         if (staticRecognizer != null)
         {
             Undo.RecordObject(staticRecognizer, "AKGF Debug Mode");
-            staticRecognizer.minimumSimilarity = 0.50f;
+            staticRecognizer.minimumSimilarity = 0.55f;
             staticRecognizer.requiredStableSeconds = 0f;
-            staticRecognizer.sameGestureCooldownSeconds = 0f;
-            staticRecognizer.recognizeEveryFrame = true;
+            staticRecognizer.sameGestureCooldownSeconds = 1.0f;
+            staticRecognizer.recognizeEveryFrame = false;
             staticRecognizer.fireUnityEventDirectly = false;
             EditorUtility.SetDirty(staticRecognizer);
         }
@@ -915,7 +935,7 @@ public sealed class AkgfControlPanelWindow : EditorWindow
             Undo.RecordObject(sequenceRecognizer, "AKGF Debug Mode");
             sequenceRecognizer.minimumSimilarity = 0.50f;
             sequenceRecognizer.requiredConsecutiveMatches = 1;
-            sequenceRecognizer.sameGestureCooldownSeconds = 0f;
+            sequenceRecognizer.sameGestureCooldownSeconds = 1.0f;
             sequenceRecognizer.recognitionsPerSecond = 15f;
             sequenceRecognizer.fireUnityEventDirectly = false;
             EditorUtility.SetDirty(sequenceRecognizer);
@@ -924,12 +944,12 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         if (coordinator != null)
         {
             Undo.RecordObject(coordinator, "AKGF Debug Mode");
-            coordinator.globalCooldownSeconds = 0f;
-            coordinator.sameGestureCooldownSeconds = 0.50f;
+            coordinator.globalCooldownSeconds = 0.3f;
+            coordinator.sameGestureCooldownSeconds = 1.0f;
             coordinator.sequenceBlocksStaticSeconds = 0f;
             coordinator.acceptCurrentCandidateDirectly = true;
-            coordinator.directStaticMinimumSimilarity = 0.25f;
-            coordinator.directSequenceMinimumSimilarity = 0.35f;
+            coordinator.directStaticMinimumSimilarity = 0.55f;
+            coordinator.directSequenceMinimumSimilarity = 0.50f;
             coordinator.usePerGestureThresholdForDirectCandidates = false;
             coordinator.useRecognizerThresholdForDirectCandidates = false;
             coordinator.debugForceEmitBestCandidateAsResult = false;
@@ -945,11 +965,11 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         if (settingsDatabase != null)
         {
             Undo.RecordObject(settingsDatabase, "AKGF Debug Mode");
-            settingsDatabase.defaultStaticMinimumSimilarity = 0.50f;
+            settingsDatabase.defaultStaticMinimumSimilarity = 0.55f;
             settingsDatabase.defaultSequenceMinimumSimilarity = 0.50f;
             settingsDatabase.defaultStaticStableSeconds = 0f;
-            settingsDatabase.defaultStaticCooldownSeconds = 0f;
-            settingsDatabase.defaultSequenceCooldownSeconds = 0f;
+            settingsDatabase.defaultStaticCooldownSeconds = 1.0f;
+            settingsDatabase.defaultSequenceCooldownSeconds = 1.0f;
             settingsDatabase.defaultMinimumTrackingQuality = 0f;
             settingsDatabase.defaultGroupName = "Default";
             EditorUtility.SetDirty(settingsDatabase);
@@ -958,6 +978,92 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         if (groupController != null)
         {
             Undo.RecordObject(groupController, "AKGF Debug Mode");
+            groupController.allowUngroupedGestures = true;
+            groupController.defaultStateForUnknownGroups = true;
+            groupController.SetGroupActive("Default", true);
+            EditorUtility.SetDirty(groupController);
+        }
+
+        if (api != null)
+        {
+            api.Reconnect();
+        }
+    }
+
+    private void ApplySingleUserLowScoreDefaults()
+    {
+        ApplySingleUserDebugMode();
+
+        if (coordinator != null)
+        {
+            Undo.RecordObject(coordinator, "AKGF Percentage Confidence Defaults");
+            coordinator.debugForceEmitBestCandidateAsResult = false;
+            coordinator.acceptCurrentCandidateDirectly = true;
+            coordinator.directStaticMinimumSimilarity = 0.55f;
+            coordinator.directSequenceMinimumSimilarity = 0.50f;
+            coordinator.globalCooldownSeconds = 0.3f;
+            coordinator.sameGestureCooldownSeconds = 1.0f;
+            coordinator.emitDetectedPhase = false;
+            coordinator.emitEnterPhase = true;
+            coordinator.emitStayPhase = false;
+            coordinator.emitExitPhase = false;
+            coordinator.emitConfirmedPhase = false;
+            coordinator.Reconnect();
+            EditorUtility.SetDirty(coordinator);
+        }
+    }
+
+    private void ApplyMultiUserDebugMode()
+    {
+        if (modeManager != null)
+        {
+            Undo.RecordObject(modeManager, "AKGF MultiUser Debug Mode");
+            modeManager.trackingMode = AkgfTrackingMode.MultiUser;
+            modeManager.ApplyMode();
+            EditorUtility.SetDirty(modeManager);
+        }
+
+        if (multiUserManager != null)
+        {
+            Undo.RecordObject(multiUserManager, "AKGF MultiUser Debug Mode");
+            multiUserManager.enableStaticPoseRecognition = true;
+            multiUserManager.enableSequenceRecognition = true;
+            multiUserManager.defaultStaticMinimumSimilarity = 0.55f;
+            multiUserManager.defaultSequenceMinimumSimilarity = 0.50f;
+            multiUserManager.defaultStaticStableSeconds = 0f;
+            multiUserManager.defaultStaticCooldownSeconds = 1.0f;
+            multiUserManager.defaultSequenceCooldownSeconds = 1.0f;
+            multiUserManager.requiredConsecutiveSequenceMatches = 1;
+            multiUserManager.globalCooldownSeconds = 0.3f;
+            multiUserManager.sameGestureCooldownSeconds = 1.0f;
+            multiUserManager.sequenceHasPriority = true;
+            multiUserManager.sequenceBlocksStaticSeconds = 0.5f;
+            multiUserManager.requireCalibrationBeforeRecognition = false;
+            multiUserManager.emitDetectedPhase = false;
+            multiUserManager.emitEnterPhase = true;
+            multiUserManager.emitStayPhase = false;
+            multiUserManager.emitExitPhase = false;
+            multiUserManager.emitConfirmedPhase = false;
+            multiUserManager.ResolveReferences();
+            EditorUtility.SetDirty(multiUserManager);
+        }
+
+        if (settingsDatabase != null)
+        {
+            Undo.RecordObject(settingsDatabase, "AKGF MultiUser Debug Mode");
+            settingsDatabase.defaultStaticMinimumSimilarity = 0.55f;
+            settingsDatabase.defaultSequenceMinimumSimilarity = 0.50f;
+            settingsDatabase.defaultStaticStableSeconds = 0f;
+            settingsDatabase.defaultStaticCooldownSeconds = 1.0f;
+            settingsDatabase.defaultSequenceCooldownSeconds = 1.0f;
+            settingsDatabase.defaultMinimumTrackingQuality = 0f;
+            settingsDatabase.defaultGroupName = "Default";
+            EditorUtility.SetDirty(settingsDatabase);
+        }
+
+        if (groupController != null)
+        {
+            Undo.RecordObject(groupController, "AKGF MultiUser Debug Mode");
             groupController.allowUngroupedGestures = true;
             groupController.defaultStateForUnknownGroups = true;
             groupController.SetGroupActive("Default", true);
@@ -1002,7 +1108,7 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         if (staticRecognizer != null)
         {
             Undo.RecordObject(staticRecognizer, "AKGF Normal Defaults");
-            staticRecognizer.minimumSimilarity = 0.82f;
+            staticRecognizer.minimumSimilarity = 0.70f;
             staticRecognizer.requiredStableSeconds = 0.20f;
             staticRecognizer.sameGestureCooldownSeconds = 0.75f;
             staticRecognizer.recognizeEveryFrame = false;
@@ -1013,7 +1119,7 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         if (sequenceRecognizer != null)
         {
             Undo.RecordObject(sequenceRecognizer, "AKGF Normal Defaults");
-            sequenceRecognizer.minimumSimilarity = 0.72f;
+            sequenceRecognizer.minimumSimilarity = 0.65f;
             sequenceRecognizer.requiredConsecutiveMatches = 2;
             sequenceRecognizer.sameGestureCooldownSeconds = 1f;
             sequenceRecognizer.recognitionsPerSecond = 10f;
@@ -1028,8 +1134,8 @@ public sealed class AkgfControlPanelWindow : EditorWindow
             coordinator.sameGestureCooldownSeconds = 0.75f;
             coordinator.sequenceBlocksStaticSeconds = 0.60f;
             coordinator.acceptCurrentCandidateDirectly = true;
-            coordinator.directStaticMinimumSimilarity = 0.45f;
-            coordinator.directSequenceMinimumSimilarity = 0.55f;
+            coordinator.directStaticMinimumSimilarity = 0.70f;
+            coordinator.directSequenceMinimumSimilarity = 0.65f;
             coordinator.usePerGestureThresholdForDirectCandidates = false;
             coordinator.useRecognizerThresholdForDirectCandidates = false;
             coordinator.emitDetectedPhase = false;
@@ -1138,6 +1244,6 @@ public sealed class AkgfControlPanelWindow : EditorWindow
             return "None";
         }
 
-        return $"{match.gestureName} {match.gestureKind} {match.phase} {match.similarity:0.00}";
+        return $"{match.gestureName} {match.gestureKind} {match.phase} {AkgfGestureMatcher.FormatSimilarityPercent(match.similarity)}";
     }
 }

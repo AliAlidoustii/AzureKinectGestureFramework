@@ -90,7 +90,7 @@ namespace AzureKinectGestureFramework
             string filename = $"{filePrefix}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
             CurrentLogPath = Path.Combine(folder, filename);
             writer = new StreamWriter(CurrentLogPath, false);
-            writer.WriteLine("utc,unityTime,mode,bodyId,gesture,kind,phase,confidence,group,priority,trackingQuality,mirrored,bodyX,bodyY,bodyZ");
+            writer.WriteLine("utc,unityTime,mode,bodyId,gesture,kind,phase,confidencePercent,confidence01,group,priority,trackingQuality,mirrored,bodyX,bodyY,bodyZ");
             writer.Flush();
         }
 
@@ -194,7 +194,8 @@ namespace AzureKinectGestureFramework
                 Escape(data.gestureName),
                 data.gestureKind.ToString(),
                 data.phase.ToString(),
-                data.confidence.ToString("0.0000"),
+                data.confidencePercent.ToString("0.0"),
+                data.confidence01.ToString("0.0000"),
                 Escape(data.groupName),
                 data.priority.ToString(),
                 data.trackingQuality.ToString("0.0000"),

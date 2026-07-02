@@ -76,8 +76,8 @@ namespace AzureKinectGestureFramework
         public AkgfGestureMatcherSettings staticMatcherSettings = new AkgfGestureMatcherSettings();
         public AkgfSequenceGestureMatcherSettings sequenceMatcherSettings = new AkgfSequenceGestureMatcherSettings();
         public AkgfTrackingQualityFilter trackingQualityFilter = new AkgfTrackingQualityFilter();
-        [Range(0f, 1f)] public float defaultStaticMinimumSimilarity = 0.82f;
-        [Range(0f, 1f)] public float defaultSequenceMinimumSimilarity = 0.72f;
+        [Range(0f, 1f)] public float defaultStaticMinimumSimilarity = 0.60f;
+        [Range(0f, 1f)] public float defaultSequenceMinimumSimilarity = 0.55f;
         public float defaultStaticStableSeconds = 0.20f;
         public float defaultStaticCooldownSeconds = 0.75f;
         public float defaultSequenceCooldownSeconds = 1.0f;
@@ -131,6 +131,10 @@ namespace AzureKinectGestureFramework
 
         public int VisibleBodyCount { get; private set; }
         public float LastProcessingMilliseconds { get; private set; }
+        public AkgfGestureMatchResult LastStaticCandidate { get; private set; } = AkgfGestureMatchResult.None;
+        public AkgfGestureMatchResult LastSequenceCandidate { get; private set; } = AkgfGestureMatchResult.None;
+        public AkgfGestureMatchResult LastOutput { get; private set; } = AkgfGestureMatchResult.None;
+        public string LastDecision { get; private set; } = "not evaluated yet";
         public int ActiveUserCount => users.Count;
         public IReadOnlyList<int> ActiveBodyIds => activeBodyIds;
 
@@ -229,6 +233,9 @@ namespace AzureKinectGestureFramework
 
         public void Tick()
         {
+            LastStaticCandidate = AkgfGestureMatchResult.None;
+            LastSequenceCandidate = AkgfGestureMatchResult.None;
+
             if (multiSource == null)
             {
                 ResolveReferences();
@@ -237,6 +244,7 @@ namespace AzureKinectGestureFramework
             if (multiSource == null)
             {
                 VisibleBodyCount = 0;
+                LastDecision = "no multi-user skeleton source assigned";
                 PruneLostUsers();
                 return;
             }
@@ -244,6 +252,10 @@ namespace AzureKinectGestureFramework
             bodies.Clear();
             multiSource.GetTrackedBodies(bodies);
             VisibleBodyCount = bodies.Count;
+            if (VisibleBodyCount == 0)
+            {
+                LastDecision = "no visible bodies";
+            }
 
             visibleRawBodyIds.Clear();
             for (int i = 0; i < bodies.Count; i++)
@@ -396,27 +408,44 @@ namespace AzureKinectGestureFramework
             AkgfGestureMatchResult match = AkgfGestureMatcher.FindBestMatch(pose, gestureDatabase.Gestures, staticMatcherSettings, gestureSettingsDatabase, groupController);
             if (!match.isValid)
             {
+                LastDecision = "multi static: no valid match";
                 ResetStaticStability(state);
                 return;
             }
+
+            match.bodyId = state.bodyId;
+            match.bodyPosition = state.lastBodyPosition;
+            match.gestureKind = AkgfGestureKind.StaticPose;
+            LastStaticCandidate = match;
 
             AkgfGestureSettings settings = GetSettings(match.gestureName, AkgfGestureKind.StaticPose);
             if (!ValidateMatchAgainstSettings(body, ref match, settings, defaultStaticMinimumSimilarity))
             {
+                LastStaticCandidate = match;
                 ResetStaticStability(state);
                 return;
             }
+            LastStaticCandidate = match;
 
-            if (!string.Equals(state.stableStaticName, match.gestureName, StringComparisonForNames()))
+            float requiredStable = settings != null ? settings.requiredStableSeconds : defaultStaticStableSeconds;
+            bool isSameStableGesture = string.Equals(state.stableStaticName, match.gestureName, StringComparisonForNames());
+
+            // If requiredStable is 0, emit on the first accepted frame.
+            // The older MultiUser logic always waited for the same candidate on a second frame,
+            // which made MultiUser behave differently from SingleUser.
+            if (!isSameStableGesture)
             {
                 state.stableStaticName = match.gestureName;
                 state.staticStableSinceTime = Time.time;
-                return;
+                if (requiredStable > 0.0001f)
+                {
+                    LastDecision = $"multi static waiting for stability: {match.gestureName}";
+                    return;
+                }
             }
-
-            float requiredStable = settings != null ? settings.requiredStableSeconds : defaultStaticStableSeconds;
-            if (Time.time - state.staticStableSinceTime < Mathf.Max(0f, requiredStable))
+            else if (Time.time - state.staticStableSinceTime < Mathf.Max(0f, requiredStable))
             {
+                LastDecision = $"multi static waiting for stability: {match.gestureName}";
                 return;
             }
 
@@ -473,28 +502,44 @@ namespace AzureKinectGestureFramework
             AkgfGestureMatchResult match = AkgfSequenceGestureMatcher.FindBestMatch(window, sequenceGestureDatabase.Gestures, sequenceMatcherSettings, gestureSettingsDatabase, groupController);
             if (!match.isValid)
             {
+                LastDecision = "multi sequence: no valid match";
                 ResetSequenceConsecutive(state);
                 return;
             }
+
+            match.bodyId = state.bodyId;
+            match.bodyPosition = state.lastBodyPosition;
+            match.gestureKind = AkgfGestureKind.Sequence;
+            LastSequenceCandidate = match;
 
             AkgfGestureSettings settings = GetSettings(match.gestureName, AkgfGestureKind.Sequence);
             if (!ValidateMatchAgainstSettings(body, ref match, settings, defaultSequenceMinimumSimilarity))
             {
+                LastSequenceCandidate = match;
                 ResetSequenceConsecutive(state);
                 return;
             }
+            LastSequenceCandidate = match;
 
+            int requiredMatches = Mathf.Max(1, requiredConsecutiveSequenceMatches);
             if (!string.Equals(state.consecutiveSequenceName, match.gestureName, StringComparisonForNames()))
             {
                 state.consecutiveSequenceName = match.gestureName;
                 state.consecutiveSequenceCount = 1;
-                return;
+                if (requiredMatches > 1)
+                {
+                    LastDecision = $"multi sequence waiting for consecutive matches: {match.gestureName} 1/{requiredMatches}";
+                    return;
+                }
             }
-
-            state.consecutiveSequenceCount++;
-            if (state.consecutiveSequenceCount < Mathf.Max(1, requiredConsecutiveSequenceMatches))
+            else
             {
-                return;
+                state.consecutiveSequenceCount++;
+                if (state.consecutiveSequenceCount < requiredMatches)
+                {
+                    LastDecision = $"multi sequence waiting for consecutive matches: {match.gestureName} {state.consecutiveSequenceCount}/{requiredMatches}";
+                    return;
+                }
             }
 
             float cooldown = settings != null ? settings.cooldownSeconds : defaultSequenceCooldownSeconds;
@@ -523,11 +568,13 @@ namespace AzureKinectGestureFramework
             {
                 if (!settings.enabled)
                 {
+                    LastDecision = $"blocked: settings disabled for {match.gestureName}";
                     return false;
                 }
 
                 if (groupController != null && !groupController.IsGroupActive(settings.groupName))
                 {
+                    LastDecision = $"blocked: group '{settings.groupName}' is not active";
                     return false;
                 }
             }
@@ -537,6 +584,7 @@ namespace AzureKinectGestureFramework
             {
                 if (!trackingQualityFilter.Passes(body, settings, out gestureQuality))
                 {
+                    LastDecision = $"blocked: tracking quality below requirement for {match.gestureName}";
                     return false;
                 }
 
@@ -548,7 +596,13 @@ namespace AzureKinectGestureFramework
             match.priority = settings != null ? settings.priority : match.priority;
 
             float threshold = settings != null ? settings.minimumSimilarity : defaultMinimumSimilarity;
-            return match.similarity >= threshold;
+            if (match.similarity < threshold)
+            {
+                LastDecision = $"blocked: similarity {AkgfGestureMatcher.FormatSimilarityPercent(match.similarity)} < {AkgfGestureMatcher.FormatSimilarityPercent(threshold)} for {match.gestureName}";
+                return false;
+            }
+
+            return true;
         }
 
         private void ResolvePendingCandidates(UserState state)
@@ -577,6 +631,7 @@ namespace AzureKinectGestureFramework
         {
             if (!match.isValid || string.IsNullOrWhiteSpace(match.gestureName))
             {
+                LastDecision = "multi candidate invalid or missing gesture name";
                 return false;
             }
 
@@ -585,17 +640,20 @@ namespace AzureKinectGestureFramework
             {
                 if (!settings.enabled)
                 {
+                    LastDecision = $"blocked: settings disabled for {match.gestureName}";
                     return false;
                 }
 
                 if (groupController != null && !groupController.IsGroupActive(settings.groupName))
                 {
+                    LastDecision = $"blocked: group '{settings.groupName}' is not active";
                     return false;
                 }
             }
 
             if (Time.time - state.lastAnyFireTime < Mathf.Max(0f, globalCooldownSeconds))
             {
+                LastDecision = $"blocked: multi global cooldown {globalCooldownSeconds:0.00}s";
                 return false;
             }
 
@@ -604,12 +662,15 @@ namespace AzureKinectGestureFramework
             if (state.lastFireByGesture.TryGetValue(key, out float lastTime) &&
                 Time.time - lastTime < Mathf.Max(0f, cooldown))
             {
+                LastDecision = $"blocked: multi same gesture cooldown {cooldown:0.00}s";
                 return false;
             }
 
             bool isSameAsActive = IsActive(state, match);
             state.lastAnyFireTime = Time.time;
             state.lastFireByGesture[key] = Time.time;
+            LastOutput = match;
+            LastDecision = $"accepted: body {state.bodyId} {match.gestureName} {match.gestureKind} {AkgfGestureMatcher.FormatSimilarityPercent(match.similarity)}";
 
             if (match.gestureKind == AkgfGestureKind.Sequence)
             {

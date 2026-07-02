@@ -120,7 +120,7 @@ public sealed class AkgfGestureTuningWindow : EditorWindow
             }
 
             item.groupName = EditorGUILayout.TextField("Group", item.groupName);
-            item.minimumSimilarity = EditorGUILayout.Slider("Min Similarity", item.minimumSimilarity, 0f, 1f);
+            item.minimumSimilarity = EditorGUILayout.Slider("Min Similarity (0.70 = 70%)", item.minimumSimilarity, 0f, 1f);
             item.requiredStableSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Hold / Stable Seconds", item.requiredStableSeconds));
             item.cooldownSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Cooldown Seconds", item.cooldownSeconds));
             item.priority = EditorGUILayout.IntField("Priority", item.priority);

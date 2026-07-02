@@ -20,6 +20,8 @@ namespace AzureKinectGestureFramework
         public int bodyId;
         public Vector3 bodyPosition;
 
+        public float confidencePercent => AkgfGestureMatcher.SimilarityToPercent(similarity);
+
         public static AkgfGestureMatchResult None
         {
             get

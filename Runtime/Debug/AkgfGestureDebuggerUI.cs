@@ -107,7 +107,7 @@ namespace AzureKinectGestureFramework
             AkgfGestureMatchResult match = recognizer.LastMatch;
             GUILayout.Label($"Static body: {(recognizer.HasBodyThisFrame ? "yes" : "no")} | pose: {(recognizer.HasNormalizedPoseThisFrame ? "yes" : "no")} | body quality={recognizer.LastTrackingQuality:0.00}", labelStyle);
             GUILayout.Label(match.isValid
-                ? $"Static best: {match.gestureName} | {match.similarity:0.000} | q={match.trackingQuality:0.00} | mirrored={match.wasMirrored} | group={match.groupName}"
+                ? $"Static best: {match.gestureName} | {AkgfGestureMatcher.FormatSimilarityPercent(match.similarity)} | q={match.trackingQuality:0.00} | mirrored={match.wasMirrored} | group={match.groupName}"
                 : "Static best: none", labelStyle);
         }
 
@@ -122,7 +122,7 @@ namespace AzureKinectGestureFramework
             AkgfGestureMatchResult match = sequenceRecognizer.LastMatch;
             GUILayout.Label($"Sequence buffer: {sequenceRecognizer.BufferedFrameCount} frames | ready: {(sequenceRecognizer.HasEnoughBufferedFrames ? "yes" : "no")} | body quality={sequenceRecognizer.LastTrackingQuality:0.00}", labelStyle);
             GUILayout.Label(match.isValid
-                ? $"Sequence best: {match.gestureName} | {match.similarity:0.000} | q={match.trackingQuality:0.00} | mirrored={match.wasMirrored} | group={match.groupName}"
+                ? $"Sequence best: {match.gestureName} | {AkgfGestureMatcher.FormatSimilarityPercent(match.similarity)} | q={match.trackingQuality:0.00} | mirrored={match.wasMirrored} | group={match.groupName}"
                 : "Sequence best: none", labelStyle);
         }
 
@@ -136,7 +136,7 @@ namespace AzureKinectGestureFramework
 
             AkgfGestureMatchResult output = coordinator.LastOutput;
             GUILayout.Label(output.isValid
-                ? $"Output: {output.gestureName} [{output.gestureKind}/{output.phase}] | {output.similarity:0.000} | active={coordinator.ActiveGestureName}"
+                ? $"Output: {output.gestureName} [{output.gestureKind}/{output.phase}] | {AkgfGestureMatcher.FormatSimilarityPercent(output.similarity)} | active={coordinator.ActiveGestureName}"
                 : "Output: none yet", labelStyle);
         }
 

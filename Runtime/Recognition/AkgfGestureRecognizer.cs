@@ -22,7 +22,7 @@ namespace AzureKinectGestureFramework
         public AkgfPoseNormalizerSettings normalizerSettings = new AkgfPoseNormalizerSettings();
         public AkgfGestureMatcherSettings matcherSettings = new AkgfGestureMatcherSettings();
         public AkgfTrackingQualityFilter trackingQualityFilter = new AkgfTrackingQualityFilter();
-        [Range(0f, 1f)] public float minimumSimilarity = 0.82f;
+        [Range(0f, 1f)] public float minimumSimilarity = 0.60f;
         [Tooltip("Gesture must remain the best match for this long before it fires. Per-gesture settings override this when present.")]
         public float requiredStableSeconds = 0.20f;
         [Tooltip("Minimum time between repeated events for the same gesture. Per-gesture settings override this when present.")]

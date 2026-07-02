@@ -4,13 +4,49 @@ namespace AzureKinectGestureFramework
 {
     public static class AkgfUnityObjectFinder
     {
+        /// <summary>
+        /// Finds the first object of type T in the active scene, including inactive GameObjects.
+        /// This matters because AKGF switches between SingleUserSystem and MultiUserSystem by
+        /// enabling/disabling roots; references must still be resolvable while one root is inactive.
+        /// </summary>
         public static T FindFirst<T>() where T : Object
         {
 #if UNITY_2023_1_OR_NEWER
-            return Object.FindFirstObjectByType<T>();
+            T[] items = Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 #else
-            return Object.FindObjectOfType<T>();
+            T[] items = Object.FindObjectsOfType<T>(true);
 #endif
+            for (int i = 0; i < items.Length; i++)
+            {
+                if (IsSceneObject(items[i]))
+                {
+                    return items[i];
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsSceneObject(Object item)
+        {
+            if (item == null)
+            {
+                return false;
+            }
+
+            Component component = item as Component;
+            if (component != null)
+            {
+                return component.gameObject != null && component.gameObject.scene.IsValid();
+            }
+
+            GameObject go = item as GameObject;
+            if (go != null)
+            {
+                return go.scene.IsValid();
+            }
+
+            return true;
         }
     }
 }

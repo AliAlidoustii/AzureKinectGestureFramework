@@ -13,7 +13,7 @@ namespace AzureKinectGestureFramework
         public string groupName = "Default";
 
         [Header("Recognition")]
-        [Range(0f, 1f)] public float minimumSimilarity = 0.82f;
+        [Range(0f, 1f)] public float minimumSimilarity = 0.60f;
         [Tooltip("Static poses use this as hold time. Sequence gestures use recognizer consecutive-match settings too.")]
         public float requiredStableSeconds = 0.20f;
         public float cooldownSeconds = 0.75f;

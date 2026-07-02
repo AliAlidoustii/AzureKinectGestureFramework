@@ -24,7 +24,7 @@ namespace AzureKinectGestureFramework
         public AkgfPoseNormalizerSettings normalizerSettings = new AkgfPoseNormalizerSettings();
         public AkgfSequenceGestureMatcherSettings matcherSettings = new AkgfSequenceGestureMatcherSettings();
         public AkgfTrackingQualityFilter trackingQualityFilter = new AkgfTrackingQualityFilter();
-        [Range(0f, 1f)] public float minimumSimilarity = 0.72f;
+        [Range(0f, 1f)] public float minimumSimilarity = 0.55f;
         public float recognitionWindowSeconds = 1.25f;
         public float maxBufferSeconds = 3f;
         public float samplesPerSecond = 15f;

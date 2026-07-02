@@ -109,12 +109,12 @@ namespace AzureKinectGestureFramework
             {
                 return;
             }
-            AddRecent($"{data.mode} body {data.bodyId}: {data.gestureName} {data.phase} {data.confidence:0.00}");
+            AddRecent($"{data.mode} body {data.bodyId}: {data.gestureName} {data.phase} {data.confidencePercent:0}%");
         }
 
         private void HandleMatch(AkgfGestureMatchResult match)
         {
-            AddRecent($"Body {match.bodyId}: {match.gestureName} {match.phase} {match.similarity:0.00}");
+            AddRecent($"Body {match.bodyId}: {match.gestureName} {match.phase} {AkgfGestureMatcher.FormatSimilarityPercent(match.similarity)}");
         }
 
         private void AddRecent(string message)
@@ -170,7 +170,7 @@ namespace AzureKinectGestureFramework
             {
                 return "none";
             }
-            return $"{match.gestureName} ({match.gestureKind}) {match.similarity:0.00} phase={match.phase}";
+            return $"{match.gestureName} ({match.gestureKind}) {AkgfGestureMatcher.FormatSimilarityPercent(match.similarity)} phase={match.phase}";
         }
 
         private static string ExplainDecision(AkgfGestureMatchResult staticMatch, AkgfGestureMatchResult sequenceMatch, AkgfGestureMatchResult output)

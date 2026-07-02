@@ -26,8 +26,8 @@ namespace AzureKinectGestureFramework
         public bool caseSensitiveGestureNames = false;
 
         [Header("Defaults")]
-        [Range(0f, 1f)] public float defaultStaticMinimumSimilarity = 0.82f;
-        [Range(0f, 1f)] public float defaultSequenceMinimumSimilarity = 0.72f;
+        [Range(0f, 1f)] public float defaultStaticMinimumSimilarity = 0.60f;
+        [Range(0f, 1f)] public float defaultSequenceMinimumSimilarity = 0.55f;
         public float defaultStaticStableSeconds = 0.20f;
         public float defaultStaticCooldownSeconds = 0.75f;
         public float defaultSequenceCooldownSeconds = 1.0f;

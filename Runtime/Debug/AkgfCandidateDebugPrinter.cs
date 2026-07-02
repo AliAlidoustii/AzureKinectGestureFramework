@@ -44,7 +44,7 @@ namespace AzureKinectGestureFramework
                 if (match.isValid && !string.IsNullOrWhiteSpace(match.gestureName) &&
                     !string.Equals(lastStaticName, match.gestureName, System.StringComparison.OrdinalIgnoreCase))
                 {
-                    Debug.Log($"[AKGF STATIC CANDIDATE] {match.gestureName} similarity={match.similarity:0.00} thresholdCheck=see recognizer/settings");
+                    Debug.Log($"[AKGF STATIC CANDIDATE] {match.gestureName} similarity={AkgfGestureMatcher.FormatSimilarityPercent(match.similarity)} thresholdCheck=see recognizer/settings");
                     lastStaticName = match.gestureName;
                     printed = true;
                 }
@@ -56,7 +56,7 @@ namespace AzureKinectGestureFramework
                 if (match.isValid && !string.IsNullOrWhiteSpace(match.gestureName) &&
                     !string.Equals(lastSequenceName, match.gestureName, System.StringComparison.OrdinalIgnoreCase))
                 {
-                    Debug.Log($"[AKGF SEQUENCE CANDIDATE] {match.gestureName} similarity={match.similarity:0.00} thresholdCheck=see recognizer/settings");
+                    Debug.Log($"[AKGF SEQUENCE CANDIDATE] {match.gestureName} similarity={AkgfGestureMatcher.FormatSimilarityPercent(match.similarity)} thresholdCheck=see recognizer/settings");
                     lastSequenceName = match.gestureName;
                     printed = true;
                 }

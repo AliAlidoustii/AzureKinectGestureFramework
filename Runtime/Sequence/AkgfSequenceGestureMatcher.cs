@@ -7,8 +7,8 @@ namespace AzureKinectGestureFramework
     [Serializable]
     public sealed class AkgfSequenceGestureMatcherSettings
     {
-        [Tooltip("Sequence similarity = exp(-distance / sensitivity). Good range: 0.08 - 0.35.")]
-        public float similaritySensitivity = 0.18f;
+        [Tooltip("Sequence confidence formula: sensitivity / (sensitivity + distance). Higher values make confidence more forgiving. Good range: 0.80 - 1.60.")]
+        public float similaritySensitivity = 1.20f;
 
         [Tooltip("Every sequence is resampled to this frame count before comparison. 18-32 is usually enough.")]
         [Range(8, 60)] public int resampledFrameCount = 24;
