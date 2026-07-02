@@ -23,6 +23,8 @@ namespace AzureKinectGestureFramework
 
         [SerializeField] private List<AkgfGestureData> gestures = new List<AkgfGestureData>();
 
+        public string LastLoadSummary { get; private set; } = "not loaded yet";
+
         public IReadOnlyList<AkgfGestureData> Gestures => gestures;
         public int Count => gestures != null ? gestures.Count : 0;
 
@@ -37,18 +39,43 @@ namespace AzureKinectGestureFramework
         public void LoadAll()
         {
             gestures = new List<AkgfGestureData>();
+            int resourcesBefore = gestures.Count;
 
             if (loadFromResources)
             {
                 LoadFromResources();
             }
 
+            int resourcesCount = gestures.Count - resourcesBefore;
+            int persistentBefore = gestures.Count;
+
             if (loadFromPersistentData)
             {
                 LoadFromFolder(GetPersistentGestureFolderPath());
             }
 
+            int persistentCount = gestures.Count - persistentBefore;
+
+            // Important MultiUser fix:
+            // In the Unity Editor users often delete/import AKGF packages while their recordings live in
+            // a different Assets folder, or Unity has not re-imported Resources yet. SingleUser may still
+            // work from an already assigned database while MultiUser reports staticDB=0.
+            // This fallback searches real JSON files and only accepts JSON that looks like an AKGF static pose.
+            int fallbackBefore = gestures.Count;
+#if UNITY_EDITOR
+            if (gestures.Count == 0)
+            {
+                LoadFromFolderRecursive(Application.dataPath);
+            }
+#endif
+            if (gestures.Count == 0)
+            {
+                LoadFromFolderRecursive(Path.Combine(Application.persistentDataPath, "AzureKinectGestureFramework"));
+            }
+
+            int fallbackCount = gestures.Count - fallbackBefore;
             RemoveDuplicateNamesKeepingLast();
+            LastLoadSummary = $"static poses loaded={gestures.Count}, resources+={resourcesCount}, persistent+={persistentCount}, fallback+={fallbackCount}";
         }
 
         public AkgfGestureData GetGesture(string gestureName)
@@ -157,12 +184,22 @@ namespace AzureKinectGestureFramework
 
         private void LoadFromFolder(string folder)
         {
+            LoadFromFolderInternal(folder, SearchOption.TopDirectoryOnly);
+        }
+
+        private void LoadFromFolderRecursive(string folder)
+        {
+            LoadFromFolderInternal(folder, SearchOption.AllDirectories);
+        }
+
+        private void LoadFromFolderInternal(string folder, SearchOption searchOption)
+        {
             if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
             {
                 return;
             }
 
-            string[] files = Directory.GetFiles(folder, "*.json", SearchOption.TopDirectoryOnly);
+            string[] files = Directory.GetFiles(folder, "*.json", searchOption);
             for (int i = 0; i < files.Length; i++)
             {
                 try
@@ -179,6 +216,11 @@ namespace AzureKinectGestureFramework
         private void TryLoadJson(string json, string sourceName)
         {
             if (string.IsNullOrWhiteSpace(json))
+            {
+                return;
+            }
+
+            if (!LooksLikeStaticGestureJson(json))
             {
                 return;
             }
@@ -201,6 +243,20 @@ namespace AzureKinectGestureFramework
             {
                 Debug.LogWarning($"Could not parse gesture '{sourceName}': {e.Message}", this);
             }
+        }
+
+        private static bool LooksLikeStaticGestureJson(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return false;
+            }
+
+            // Static pose JSON has gestureName + samples. Sequence JSON has frames/keyframes and should not be loaded here.
+            return json.IndexOf("\"gestureName\"", StringComparison.OrdinalIgnoreCase) >= 0
+                && json.IndexOf("\"samples\"", StringComparison.OrdinalIgnoreCase) >= 0
+                && json.IndexOf("\"frames\"", StringComparison.OrdinalIgnoreCase) < 0
+                && json.IndexOf("\"sequence\"", StringComparison.OrdinalIgnoreCase) < 0;
         }
 
         private void RemoveDuplicateNamesKeepingLast()

@@ -27,6 +27,30 @@ namespace AzureKinectGestureFramework
             return null;
         }
 
+        public static T[] FindAll<T>() where T : Object
+        {
+#if UNITY_2023_1_OR_NEWER
+            T[] items = Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+#else
+            T[] items = Object.FindObjectsOfType<T>(true);
+#endif
+            if (items == null || items.Length == 0)
+            {
+                return new T[0];
+            }
+
+            System.Collections.Generic.List<T> sceneItems = new System.Collections.Generic.List<T>();
+            for (int i = 0; i < items.Length; i++)
+            {
+                if (IsSceneObject(items[i]))
+                {
+                    sceneItems.Add(items[i]);
+                }
+            }
+
+            return sceneItems.ToArray();
+        }
+
         private static bool IsSceneObject(Object item)
         {
             if (item == null)

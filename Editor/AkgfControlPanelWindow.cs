@@ -22,6 +22,7 @@ public sealed class AkgfControlPanelWindow : EditorWindow
     private AkgfPerformanceProfiler performanceProfiler;
     private AkgfGestureSystemApi api;
     private AkgfMultiUserGestureManager multiUserManager;
+    private AkgfMultiUserLiveDebugUI multiUserLiveDebug;
 
     private UnityEngine.Object sourceCandidate;
     private Vector2 scroll;
@@ -124,6 +125,16 @@ public sealed class AkgfControlPanelWindow : EditorWindow
                 multiUserManager?.ResolveReferences();
             }
 
+            if (GUILayout.Button("Pose Manager", EditorStyles.toolbarButton, GUILayout.Width(100)))
+            {
+                AkgfPoseCalibrationManagerWindow.Open();
+            }
+
+            if (GUILayout.Button("Multi Debug", EditorStyles.toolbarButton, GUILayout.Width(95)))
+            {
+                EnsureMultiUserLiveDebug(true);
+            }
+
             GUILayout.FlexibleSpace();
             GUILayout.Label(modeManager != null ? modeManager.gameObject.name : "No AKGF System");
         }
@@ -168,6 +179,11 @@ public sealed class AkgfControlPanelWindow : EditorWindow
             if (GUILayout.Button("Percentage Confidence Defaults"))
             {
                 ApplySingleUserLowScoreDefaults();
+            }
+
+            if (GUILayout.Button("MultiUser Direct Acceptance"))
+            {
+                ApplyMultiUserDirectAcceptanceDefaults();
             }
         }
 
@@ -680,8 +696,15 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         multiUserManager.defaultStaticCooldownSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Default Static Cooldown", multiUserManager.defaultStaticCooldownSeconds));
         multiUserManager.defaultSequenceCooldownSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("Default Sequence Cooldown", multiUserManager.defaultSequenceCooldownSeconds));
         EditorGUILayout.Space(4);
-        EditorGUILayout.LabelField("SingleUser-Compatible Acceptance", EditorStyles.boldLabel);
-        multiUserManager.usePerGestureThresholds = EditorGUILayout.Toggle("Use Per-Gesture Thresholds", multiUserManager.usePerGestureThresholds);
+        EditorGUILayout.LabelField("Normal Candidate Acceptance", EditorStyles.boldLabel);
+        multiUserManager.acceptCurrentCandidateDirectly = EditorGUILayout.Toggle("Accept Current Candidate Directly", multiUserManager.acceptCurrentCandidateDirectly);
+        multiUserManager.directStaticMinimumSimilarity = EditorGUILayout.Slider("Direct Static Min Similarity (0.70 = 70%)", multiUserManager.directStaticMinimumSimilarity, 0f, 1f);
+        multiUserManager.directSequenceMinimumSimilarity = EditorGUILayout.Slider("Direct Sequence Min Similarity (0.65 = 65%)", multiUserManager.directSequenceMinimumSimilarity, 0f, 1f);
+        multiUserManager.usePerGestureThresholdForDirectCandidates = EditorGUILayout.Toggle("Use Per-Gesture Threshold", multiUserManager.usePerGestureThresholdForDirectCandidates);
+
+        EditorGUILayout.Space(4);
+        EditorGUILayout.LabelField("Advanced / Per-Gesture Overrides", EditorStyles.boldLabel);
+        multiUserManager.usePerGestureThresholds = EditorGUILayout.Toggle("Use Legacy Per-Gesture Thresholds", multiUserManager.usePerGestureThresholds);
         multiUserManager.usePerGestureCooldowns = EditorGUILayout.Toggle("Use Per-Gesture Cooldowns", multiUserManager.usePerGestureCooldowns);
         multiUserManager.usePerGestureStableSeconds = EditorGUILayout.Toggle("Use Per-Gesture Stable Seconds", multiUserManager.usePerGestureStableSeconds);
         multiUserManager.useExplicitGestureSettings = EditorGUILayout.Toggle("Use Explicit Gesture Settings", multiUserManager.useExplicitGestureSettings);
@@ -701,9 +724,31 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         multiUserManager.emitExitPhase = EditorGUILayout.Toggle("Emit Exit", multiUserManager.emitExitPhase);
         multiUserManager.emitConfirmedPhase = EditorGUILayout.Toggle("Emit Confirmed", multiUserManager.emitConfirmedPhase);
 
-        if (GUILayout.Button("Clear MultiUser Runtime Users"))
+        EditorGUILayout.Space(6);
+        EditorGUILayout.LabelField("Diagnostics", EditorStyles.boldLabel);
+        multiUserManager.debugForceBestCandidateAsResult = EditorGUILayout.Toggle("DEBUG Force Best Candidate", multiUserManager.debugForceBestCandidateAsResult);
+        multiUserManager.debugIgnoreQualityFilter = EditorGUILayout.Toggle("DEBUG Ignore Quality Filter", multiUserManager.debugIgnoreQualityFilter);
+        multiUserManager.holdLastDebugValues = EditorGUILayout.Toggle("Hold Last Debug Candidate", multiUserManager.holdLastDebugValues);
+        multiUserManager.debugCandidateHoldSeconds = Mathf.Max(0.05f, EditorGUILayout.FloatField("Debug Candidate Hold Seconds", multiUserManager.debugCandidateHoldSeconds));
+        multiUserManager.debugLogDiagnosticsToConsole = EditorGUILayout.Toggle("Log Diagnostics To Console", multiUserManager.debugLogDiagnosticsToConsole);
+        multiUserManager.debugLogIntervalSeconds = Mathf.Max(0.1f, EditorGUILayout.FloatField("Log Interval Seconds", multiUserManager.debugLogIntervalSeconds));
+
+        using (new EditorGUILayout.HorizontalScope())
         {
-            multiUserManager.ClearUsers();
+            if (GUILayout.Button("Load MultiUser DBs"))
+            {
+                multiUserManager.ForceLoadDatabases();
+            }
+
+            if (GUILayout.Button("Clear MultiUser Runtime Users"))
+            {
+                multiUserManager.ClearUsers();
+            }
+
+            if (GUILayout.Button("Show MultiUser Live Debug"))
+            {
+                EnsureMultiUserLiveDebug(true);
+            }
         }
 
         EditorUtility.SetDirty(multiUserManager);
@@ -739,6 +784,7 @@ public sealed class AkgfControlPanelWindow : EditorWindow
             EditorGUILayout.LabelField("Multi Sequence Candidate", Format(multiUserManager.LastSequenceCandidate));
             EditorGUILayout.LabelField("Multi Final Output", Format(multiUserManager.LastOutput));
             EditorGUILayout.LabelField("Multi Decision", multiUserManager.LastDecision ?? "not evaluated yet");
+            EditorGUILayout.TextArea(multiUserManager.LastDebugSummary ?? "", GUILayout.MinHeight(38));
         }
         EditorGUILayout.EndVertical();
     }
@@ -780,6 +826,7 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         performanceProfiler = FindSceneObject<AkgfPerformanceProfiler>();
         api = FindSceneObject<AkgfGestureSystemApi>();
         multiUserManager = FindSceneObject<AkgfMultiUserGestureManager>();
+        multiUserLiveDebug = FindSceneObject<AkgfMultiUserLiveDebugUI>();
     }
 
     private static T FindSceneObject<T>() where T : UnityEngine.Object
@@ -1021,6 +1068,89 @@ public sealed class AkgfControlPanelWindow : EditorWindow
         }
     }
 
+    private void EnsureMultiUserLiveDebug(bool show)
+    {
+        if (multiUserLiveDebug == null)
+        {
+            GameObject target = api != null ? api.gameObject : (modeManager != null ? modeManager.gameObject : null);
+            if (target == null && multiUserManager != null)
+            {
+                target = multiUserManager.gameObject;
+            }
+
+            if (target != null)
+            {
+                multiUserLiveDebug = target.GetComponent<AkgfMultiUserLiveDebugUI>();
+                if (multiUserLiveDebug == null)
+                {
+                    multiUserLiveDebug = Undo.AddComponent<AkgfMultiUserLiveDebugUI>(target);
+                }
+            }
+        }
+
+        if (multiUserLiveDebug != null)
+        {
+            Undo.RecordObject(multiUserLiveDebug, "Show AKGF MultiUser Live Debug");
+            multiUserLiveDebug.api = api;
+            multiUserLiveDebug.multiUserManager = multiUserManager;
+            multiUserLiveDebug.showOverlay = show;
+            EditorUtility.SetDirty(multiUserLiveDebug);
+            Selection.activeObject = multiUserLiveDebug;
+        }
+    }
+
+    private void ApplyMultiUserDirectAcceptanceDefaults()
+    {
+        if (modeManager != null)
+        {
+            Undo.RecordObject(modeManager, "AKGF MultiUser Direct Acceptance");
+            modeManager.trackingMode = AkgfTrackingMode.MultiUser;
+            modeManager.ApplyMode();
+            EditorUtility.SetDirty(modeManager);
+        }
+
+        if (multiUserManager != null)
+        {
+            Undo.RecordObject(multiUserManager, "AKGF MultiUser Direct Acceptance");
+            multiUserManager.enableStaticPoseRecognition = true;
+            multiUserManager.enableSequenceRecognition = true;
+            multiUserManager.acceptCurrentCandidateDirectly = true;
+            multiUserManager.directStaticMinimumSimilarity = 0.55f;
+            multiUserManager.directSequenceMinimumSimilarity = 0.50f;
+            multiUserManager.usePerGestureThresholdForDirectCandidates = false;
+            multiUserManager.usePerGestureThresholds = false;
+            multiUserManager.usePerGestureCooldowns = false;
+            multiUserManager.usePerGestureStableSeconds = false;
+            multiUserManager.useExplicitGestureSettings = true;
+            multiUserManager.useTrackingQualityFilter = false;
+            multiUserManager.debugIgnoreQualityFilter = true;
+            multiUserManager.debugForceBestCandidateAsResult = false;
+            multiUserManager.defaultStaticStableSeconds = 0f;
+            multiUserManager.requiredConsecutiveSequenceMatches = 1;
+            multiUserManager.globalCooldownSeconds = 0.3f;
+            multiUserManager.sameGestureCooldownSeconds = 1.0f;
+            multiUserManager.defaultStaticCooldownSeconds = 1.0f;
+            multiUserManager.defaultSequenceCooldownSeconds = 1.0f;
+            multiUserManager.sequenceHasPriority = true;
+            multiUserManager.sequenceBlocksStaticSeconds = 0.5f;
+            multiUserManager.emitDetectedPhase = false;
+            multiUserManager.emitEnterPhase = true;
+            multiUserManager.emitStayPhase = false;
+            multiUserManager.emitExitPhase = false;
+            multiUserManager.emitConfirmedPhase = false;
+            multiUserManager.holdLastDebugValues = true;
+            multiUserManager.debugCandidateHoldSeconds = 0.45f;
+            multiUserManager.ResolveReferences();
+            multiUserManager.ForceLoadDatabases();
+            EditorUtility.SetDirty(multiUserManager);
+        }
+
+        if (api != null)
+        {
+            api.Reconnect();
+        }
+    }
+
     private void ApplyMultiUserDebugMode()
     {
         if (modeManager != null)
@@ -1038,6 +1168,10 @@ public sealed class AkgfControlPanelWindow : EditorWindow
             multiUserManager.enableSequenceRecognition = true;
             multiUserManager.defaultStaticMinimumSimilarity = 0.55f;
             multiUserManager.defaultSequenceMinimumSimilarity = 0.50f;
+            multiUserManager.acceptCurrentCandidateDirectly = true;
+            multiUserManager.directStaticMinimumSimilarity = 0.55f;
+            multiUserManager.directSequenceMinimumSimilarity = 0.50f;
+            multiUserManager.usePerGestureThresholdForDirectCandidates = false;
             multiUserManager.defaultStaticStableSeconds = 0f;
             multiUserManager.defaultStaticCooldownSeconds = 1.0f;
             multiUserManager.defaultSequenceCooldownSeconds = 1.0f;
@@ -1045,7 +1179,13 @@ public sealed class AkgfControlPanelWindow : EditorWindow
             multiUserManager.usePerGestureCooldowns = false;
             multiUserManager.usePerGestureStableSeconds = false;
             multiUserManager.useExplicitGestureSettings = true;
-            multiUserManager.useTrackingQualityFilter = true;
+            multiUserManager.useTrackingQualityFilter = false;
+            multiUserManager.debugIgnoreQualityFilter = true;
+            multiUserManager.debugForceBestCandidateAsResult = false;
+            multiUserManager.holdLastDebugValues = true;
+            multiUserManager.debugCandidateHoldSeconds = 0.45f;
+            multiUserManager.debugLogDiagnosticsToConsole = true;
+            multiUserManager.debugLogIntervalSeconds = 1.0f;
             multiUserManager.requiredConsecutiveSequenceMatches = 1;
             multiUserManager.globalCooldownSeconds = 0.3f;
             multiUserManager.sameGestureCooldownSeconds = 1.0f;
@@ -1058,6 +1198,7 @@ public sealed class AkgfControlPanelWindow : EditorWindow
             multiUserManager.emitExitPhase = false;
             multiUserManager.emitConfirmedPhase = false;
             multiUserManager.ResolveReferences();
+            multiUserManager.ForceLoadDatabases();
             EditorUtility.SetDirty(multiUserManager);
         }
 

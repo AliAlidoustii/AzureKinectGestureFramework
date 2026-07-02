@@ -84,6 +84,11 @@ public static class AkgfGestureFrameworkMenu
         conflictVisualizer.api = api;
         conflictVisualizer.showOverlay = false;
 
+        AkgfMultiUserLiveDebugUI multiUserLiveDebug = root.AddComponent<AkgfMultiUserLiveDebugUI>();
+        multiUserLiveDebug.multiUserManager = multiManager;
+        multiUserLiveDebug.api = api;
+        multiUserLiveDebug.showOverlay = false;
+
         modeManager.ApplyMode();
         return root;
     }
@@ -179,7 +184,10 @@ public static class AkgfGestureFrameworkMenu
         manager.usePerGestureCooldowns = false;
         manager.usePerGestureStableSeconds = false;
         manager.useExplicitGestureSettings = true;
-        manager.useTrackingQualityFilter = true;
+        manager.useTrackingQualityFilter = false;
+        manager.debugIgnoreQualityFilter = true;
+        manager.holdLastDebugValues = true;
+        manager.debugCandidateHoldSeconds = 0.45f;
         manager.emitDetectedPhase = false;
         manager.emitEnterPhase = true;
         manager.emitStayPhase = false;
@@ -187,6 +195,24 @@ public static class AkgfGestureFrameworkMenu
         manager.emitConfirmedPhase = false;
 
         router.multiUserManager = manager;
+    }
+
+    [MenuItem("Tools/Azure Kinect Gesture Framework/Add MultiUser Live Debug UI", false, 35)]
+    public static void AddMultiUserLiveDebugUi()
+    {
+        AkgfGestureSystemApi api = AkgfUnityObjectFinder.FindFirst<AkgfGestureSystemApi>();
+        AkgfMultiUserGestureManager multiManager = AkgfUnityObjectFinder.FindFirst<AkgfMultiUserGestureManager>();
+        GameObject target = api != null ? api.gameObject : (multiManager != null ? multiManager.gameObject : new GameObject("AKGF_MultiUserLiveDebug"));
+        AkgfMultiUserLiveDebugUI ui = target.GetComponent<AkgfMultiUserLiveDebugUI>();
+        if (ui == null)
+        {
+            ui = Undo.AddComponent<AkgfMultiUserLiveDebugUI>(target);
+        }
+        ui.api = api;
+        ui.multiUserManager = multiManager;
+        ui.showOverlay = true;
+        Selection.activeGameObject = target;
+        EditorUtility.SetDirty(target);
     }
 
     [MenuItem("Tools/Azure Kinect Gesture Framework/Create Resource Folders", false, 100)]
